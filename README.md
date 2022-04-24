@@ -1,3 +1,5 @@
+--authorized-keys-url has been modified to add SSH-CA
+
 # Debian Network Reinstall Script
 
 [General description in English ↓](#introduction)
