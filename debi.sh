@@ -43,6 +43,13 @@ configure_sshd() {
     in_target sed -Ei \""s/^#?$1 .+/$1 $2/"\" /etc/ssh/sshd_config
 }
 
+configure_sshdadd() {
+    # !isset($sshd_config_backup)
+    [ -z "${sshd_config_backup+1s}" ] && in_target_backup /etc/ssh/sshd_config
+    sshd_config_backup=
+    in_target echo $1 $2 >> /etc/ssh/sshd_config
+}
+
 prompt_password() {
     local prompt=
 
@@ -199,9 +206,9 @@ interface=auto
 ip=
 netmask=
 gateway=
-dns='8.8.8.8 8.8.4.4'
+dns='1.1.1.1 208.67.222.222'
 hostname=
-network_console=false
+network_console=true
 set_debian_version 11
 mirror_protocol=http
 mirror_host=deb.debian.org
@@ -213,7 +220,7 @@ username=debian
 password=
 authorized_keys_url=
 sudo_with_password=false
-timezone=UTC
+timezone=Asia/Taipei
 ntp=0.debian.pool.ntp.org
 disk_partitioning=true
 disk=
@@ -222,14 +229,14 @@ efi=
 esp=106
 filesystem=ext4
 kernel=
-cloud_kernel=false
+cloud_kernel=true
 bpo_kernel=false
 install_recommends=true
 install='ca-certificates libpam-systemd'
 upgrade=
 kernel_params=
 bbr=false
-ssh_port=
+ssh_port=60372
 hold=false
 power_off=false
 architecture=
@@ -575,7 +582,7 @@ EOF
         if [ -z "$authorized_keys_url" ]; then
             configure_sshd PermitRootLogin yes
         else
-            in_target "mkdir -m 0700 -p ~root/.ssh && busybox wget -O- \"$authorized_keys_url\" >> ~root/.ssh/authorized_keys"
+            in_target "mkdir ~etc/ssh/ && busybox wget -O- \"$authorized_keys_url\" >> ~etc/ssh/authCA.pub"
         fi
 
         $save_preseed << 'EOF'
@@ -619,6 +626,7 @@ EOF
 }
 
 [ -n "$ssh_port" ] && configure_sshd Port "$ssh_port"
+[ -n "$authorized_keys_url" ] && configure_sshdadd TrustedUserCAKeys /etc/ssh/authCA.pub
 
 $save_preseed << EOF
 
